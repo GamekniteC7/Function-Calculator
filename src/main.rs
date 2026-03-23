@@ -7,14 +7,15 @@
 // =================================================================================================
 // These are general functions used everywhere throughout the code
 
-mod root;
+mod roots;
 mod extrema;
+mod inflection_points;
 
 use std::f64::NAN;
 use rand::{RngExt, SeedableRng};
 use rand::rngs::StdRng;
 use std::time::SystemTime;
-use crate::root::get_root_of_function;
+use crate::roots::get_root_of_function;
 
 // Generate the starting X-value
 fn get_random_number(interval: &(f64, f64)) -> f64 {
@@ -54,20 +55,23 @@ fn get_derivative_of_function(function_variables: &Vec<f64>) -> Vec<f64> {
     derivative_variables
 }
 
-fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: bool) {
+fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: bool, calculate_inflection_points: bool) {
     /*
     function_variables: &Vec<f64>,
     roots: &Vec<f64>,
     extrema: Vec<f64>,
     saddle_points: Vec<f64>,
+    inflection_points: Vec<f64>,
     calculate_root: bool,
-    calculate_extrema: bool
+    calculate_extrema: bool,
+    calculate_inflection_points: bool
     */
 
     let function_variables = variables[0].clone();
     let roots = variables[1].clone();
     let extrema = variables[2].clone();
     let saddle_points = variables[3].clone();
+    let inflection_points = variables[4].clone();
 
     // convert the variables of the function to a readable function
     let mut function_string = String::new();
@@ -105,6 +109,11 @@ fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: boo
         println!("The saddle points of the function are:");
         println!("{:#?}", saddle_points);
     }
+    if calculate_inflection_points {
+        println!();
+        println!("The inflection points of the function are:");
+        println!("{:#?}", inflection_points);
+    }
     println!();
     println!("------------------------------------------------------------");
 }
@@ -136,6 +145,7 @@ fn main(){
     // Here the user may choose what to calculate
     let calculate_root = true;
     let calculate_extrema = true;
+    let calculate_inflection_points = true;
 
     // ---------------------------------------------------------------------------------------------
 
@@ -173,5 +183,17 @@ fn main(){
         }
     }
 
-    print(&print_variables, calculate_root.clone(), calculate_extrema.clone());
+    if calculate_inflection_points {
+        match inflection_points::get_inflection_points(&function_variables) {
+            Ok(inflection_points) => {
+                print_variables.push(inflection_points.clone());
+            },
+            Err(e) => {
+                println!("{}", e);
+                print_variables.push(vec![NAN]);
+            }
+        }
+    }
+
+    print(&print_variables, calculate_root.clone(), calculate_extrema.clone(), calculate_inflection_points.clone());
 }
