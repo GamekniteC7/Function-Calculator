@@ -15,6 +15,7 @@ use std::f64::NAN;
 use rand::{RngExt, SeedableRng};
 use rand::rngs::StdRng;
 use std::time::SystemTime;
+use plotters::prelude::*;
 use crate::roots::get_root_of_function;
 
 // Generate the starting X-value
@@ -126,7 +127,7 @@ fn main(){
     println!("------------------------------------------------------------");
     println!();
     println!(
-        "Welcome to the function calculator! This program is able to calculate the roots and extrema of any given polynomial.
+        "Welcome to the function calculator! This program is able to calculate the roots, extrema, saddle points and inflection points of any given polynomial.
         The function must be supplied as f(x) = a_1*x^n_1 + a_2*x^n_2... as an array of variables with function_variables = [a_1, n_1, a_2, n_2...].
         The length of the array is variable."
     );
@@ -137,7 +138,7 @@ fn main(){
     // user inputs: --------------------------------------------------------------------------------
 
     // Here the user may set the desired function
-    let function_variables = vec![1.0, 3.0, -4.0, 3.0, 3.0, 2.0, 10.0, 1.0, -5.0, 0.0];
+    let function_variables = vec![1.0, 2.0, -4.0, 1.0, 3.0, 1.0, 10.0, 1.0, -5.0, 0.0];
 
     // Here the user may set the desired interval
     let newton_interval: (f64, f64) = (-1000.0, 1000.0);
@@ -154,6 +155,43 @@ fn main(){
         println!("Invalid function");
         return;
     }
+
+    // Plot the function using plotters
+    let plot_result = (|| -> Result<(), Box<dyn std::error::Error>> {
+        let out = BitMapBackend::new("output.png", (640, 480)).into_drawing_area();
+        out.fill(&WHITE)?;
+
+        let x_min = newton_interval.0;
+        let x_max = newton_interval.1;
+        let y_min = -1000.0;
+        let y_max = 1000.0;
+
+        let mut chart = ChartBuilder::on(&out)
+            .caption("Polynomial Graph", ("sans-serif", 30))
+            .margin(10)
+            .x_label_area_size(40)
+            .y_label_area_size(40)
+            .build_cartesian_2d(x_min..x_max, y_min..y_max)?;
+
+        chart.configure_mesh().draw()?;
+
+        // Generate (x, y) points
+        let points: Vec<(f64, f64)> = (0..=1000)
+            .map(|i| {
+                let x = x_min + (x_max - x_min) * (i as f64) / 1000.0;
+                let y = get_value_of_function(&function_variables, x);
+                (x, y)
+            })
+            .collect();
+
+        chart.draw_series(LineSeries::new(points, &RED))?;
+        Ok(())
+    })();
+    if let Err(e) = plot_result {
+        println!("Plotting error: {}", e);
+    }
+
+    // ...existing code...
 
     let mut print_variables:Vec<Vec<f64>> = vec![];
     print_variables.push(function_variables.clone());
