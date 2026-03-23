@@ -10,6 +10,7 @@
 mod root;
 mod extrema;
 
+use std::f64::NAN;
 use rand::{RngExt, SeedableRng};
 use rand::rngs::StdRng;
 use std::time::SystemTime;
@@ -53,7 +54,21 @@ fn get_derivative_of_function(function_variables: &Vec<f64>) -> Vec<f64> {
     derivative_variables
 }
 
-fn print(function_variables: &Vec<f64>, roots: &Vec<f64>, calculate_root: bool, calculate_extrema: bool) {
+fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: bool) {
+    /*
+    function_variables: &Vec<f64>,
+    roots: &Vec<f64>,
+    extrema: Vec<f64>,
+    saddle_points: Vec<f64>,
+    calculate_root: bool,
+    calculate_extrema: bool
+    */
+
+    let function_variables = variables[0].clone();
+    let roots = variables[1].clone();
+    let extrema = variables[2].clone();
+    let saddle_points = variables[3].clone();
+
     // convert the variables of the function to a readable function
     let mut function_string = String::new();
 
@@ -86,6 +101,9 @@ fn print(function_variables: &Vec<f64>, roots: &Vec<f64>, calculate_root: bool, 
     if calculate_extrema {
         println!();
         println!("The extrema of the function are:");
+        println!("{:#?}", extrema);
+        println!("The saddle points of the function are:");
+        println!("{:#?}", saddle_points);
     }
     println!();
     println!("------------------------------------------------------------");
@@ -95,10 +113,22 @@ fn print(function_variables: &Vec<f64>, roots: &Vec<f64>, calculate_root: bool, 
 // This is the main function, the starting point of the entire program
 
 fn main(){
+    println!();
+    println!("------------------------------------------------------------");
+    println!();
+    println!(
+        "Welcome to the function calculator! This program is able to calculate the roots and extrema of any given polynomial.
+        The function must be supplied as f(x) = a_1*x^n_1 + a_2*x^n_2... as an array of variables with function_variables = [a_1, n_1, a_2, n_2...].
+        The length of the array is variable."
+    );
+    println!();
+    println!("------------------------------------------------------------");
+    println!();
+
     // user inputs: --------------------------------------------------------------------------------
 
     // Here the user may set the desired function
-    let function_variables = vec![1.0, 8.0, -4.0, 3.0, 3.0, 2.0, 10.0, 1.0, -5.0, 0.0];
+    let function_variables = vec![1.0, 3.0, -4.0, 3.0, 3.0, 2.0, 10.0, 1.0, -5.0, 0.0];
 
     // Here the user may set the desired interval
     let newton_interval: (f64, f64) = (-1000.0, 1000.0);
@@ -115,14 +145,33 @@ fn main(){
         return;
     }
 
+    let mut print_variables:Vec<Vec<f64>> = vec![];
+    print_variables.push(function_variables.clone());
+
     if calculate_root {
         match get_root_of_function(&function_variables, newton_interval) {
-            Ok(root) => {print(&function_variables, &root, calculate_root.clone(), calculate_extrema.clone());},
-            Err(e) => {println!("{}", e);}
+            Ok(root) => {
+                print_variables.push(root.clone());
+            },
+            Err(e) => {
+                println!("{}", e);
+                print_variables.push(vec![NAN]);
+            }
         }
     }
 
     if calculate_extrema {
-
+        match extrema::calculate_extrema(&function_variables) {
+            Ok(extrema) => {
+                print_variables.push(extrema.0.clone());
+                print_variables.push(extrema.1.clone());
+            },
+            Err(e) => {
+                println!("{}", e);
+                print_variables.push(vec![NAN]);
+            }
+        }
     }
+
+    print(&print_variables, calculate_root.clone(), calculate_extrema.clone());
 }
