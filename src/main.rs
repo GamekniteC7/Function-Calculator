@@ -32,7 +32,7 @@ rng.random_range(interval.0..=interval.1)
 }
 
 // Calculates the Y-value of a function at a given X-value
-fn get_value_of_function(function_variables: &Vec<f64>, x: f64) -> f64 {
+fn get_value_of_function(function_variables: &Vec<f64>, x: &f64) -> f64 {
     let mut value = 0.0;
 
     for i in (0..function_variables.len()).step_by(2) {
@@ -44,20 +44,23 @@ fn get_value_of_function(function_variables: &Vec<f64>, x: f64) -> f64 {
 
 // Calculates the derivative of a given function
 fn get_derivative_of_function(function_variables: &Vec<f64>) -> Vec<f64> {
-    let mut derivative_variables = vec![];
+    let mut derivative_variables_raw = vec![];
+
 
     for i in (0..function_variables.len()).step_by(2) {
         let a = function_variables[i];
         let n = function_variables[i + 1];
-        derivative_variables.push(a * n);       // new a becomes old a * old n
-        derivative_variables.push(n - 1.0);     // new n becomes old n - 1.0
+        derivative_variables_raw.push(a * n);       // new a becomes old a * old n
+        derivative_variables_raw.push(n - 1.0);     // new n becomes old n - 1.0
     }
 
+    let derivative_variables = simplify_function(&derivative_variables_raw);
     derivative_variables
 }
 
 fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: bool, calculate_inflection_points: bool) {
     /*
+    user_variables: &Vec<f64>,
     function_variables: &Vec<f64>,
     roots: &Vec<f64>,
     extrema: Vec<f64>,
@@ -68,11 +71,12 @@ fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: boo
     calculate_inflection_points: bool
     */
 
-    let function_variables = variables[0].clone();
-    let roots = variables[1].clone();
-    let extrema = variables[2].clone();
-    let saddle_points = variables[3].clone();
-    let inflection_points = variables[4].clone();
+    let user_variables = variables[0].clone();
+    let function_variables = variables[1].clone();
+    let roots = variables[2].clone();
+    let extrema = variables[3].clone();
+    let saddle_points = variables[4].clone();
+    let inflection_points = variables[5].clone();
 
     // convert the variables of the function to a readable function
     let mut function_string = String::new();
@@ -81,6 +85,25 @@ fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: boo
         let a = function_variables[i];
         let n = function_variables[i + 1];
         function_string += &format!("{}*x^{} + ", a, n);
+    }
+
+
+    let mut derivative_string = String::new();
+    let derivative = get_derivative_of_function(&function_variables);
+
+    for i in (0..derivative.len()).step_by(2) {
+        let a = derivative[i];
+        let n = derivative[i + 1];
+        derivative_string += &format!("{}*x^{} + ", a, n);
+    }
+
+
+    let mut user_variables_string = String::new();
+
+    for i in (0..user_variables.len()).step_by(2) {
+        let a = user_variables[i];
+        let n = user_variables[i + 1];
+        user_variables_string += &format!("{}*x^{} + ", a, n);
     }
 
     // Remove the last " + "
@@ -96,8 +119,14 @@ fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: boo
     println!();
     println!("------------------------------------------------------------");
     println!();
-    println!("The function was:");
+    println!("The user Input is:");
+    println!("{}", user_variables_string);
+    println!();
+    println!("The function is:");
     println!("f(x) = {}", function_string);
+    println!();
+    println!("The derivative of the function is:");
+    println!("f'(x) = {}", derivative_string);
     if calculate_root {
         println!();
         println!("The roots of the function are:");
@@ -119,6 +148,32 @@ fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: boo
     println!("------------------------------------------------------------");
 }
 
+fn simplify_function(function_variables: &Vec<f64>) -> Vec<f64> {
+    use std::collections::HashMap;
+
+    let mut terms: HashMap<i64, f64> = HashMap::new();
+
+    for i in (0..function_variables.len()).step_by(2) {
+        let a = function_variables[i];
+        let n = function_variables[i + 1];
+        if n < 0.0 { continue; }
+        let key = (n * 1000.0) as i64;
+        *terms.entry(key).or_insert(0.0) += a;
+    }
+
+    // collect as pairs first, then sort by exponent descending
+    let mut pairs: Vec<(f64, f64)> = terms
+        .iter()
+        .filter(|&(_, &a)| a != 0.0)
+        .map(|(&key, &a)| (a, key as f64 / 1000.0))
+        .collect();
+
+    pairs.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap()); // sort by exponent (index 1)
+
+    // flatten back to [a, n, a, n...]
+    pairs.iter().flat_map(|&(a, n)| vec![a, n]).collect()
+}
+
 // =================================================================================================
 // This is the main function, the starting point of the entire program
 
@@ -138,10 +193,10 @@ fn main(){
     // user inputs: --------------------------------------------------------------------------------
 
     // Here the user may set the desired function
-    let function_variables = vec![1.0, 2.0, -4.0, 1.0, 3.0, 1.0, 10.0, 1.0, -5.0, 0.0];
+    let user_variables = vec![1.0, 4.0, -4.0, 1.0, 3.0, 1.0, 10.0, 1.0, -5.0, 0.0];
 
     // Here the user may set the desired interval
-    let newton_interval: (f64, f64) = (-1000.0, 1000.0);
+    let newton_interval: (f64, f64) = (-100.0, 100.0);
 
     // Here the user may choose what to calculate
     let calculate_root = true;
@@ -151,20 +206,41 @@ fn main(){
     // ---------------------------------------------------------------------------------------------
 
     // Check if the function is valid
-    if function_variables.len() == 0 || function_variables.len() % 2 != 0 {
+    if user_variables.len() == 0 || user_variables.len() % 2 != 0 {
         println!("Invalid function");
         return;
     }
 
-    // Plot the function using plotters
+    let function_variables = simplify_function(&user_variables);
+
+    // Plot the function using plotters (fixed for overflow)
     let plot_result = (|| -> Result<(), Box<dyn std::error::Error>> {
+        // Use a smaller, reasonable x-range for plotting
+        let x_min = -100.0;
+        let x_max = 100.0;
+
+        // Generate (x, y) points and filter out non-finite y values
+        let points: Vec<(f64, f64)> = (0..=1000)
+            .map(|i| {
+                let x = x_min + (x_max - x_min) * (i as f64) / 1000.0;
+                let y = get_value_of_function(&function_variables, &x);
+                (x, y)
+            })
+            .filter(|(_, y)| y.is_finite())
+            .collect();
+
+        // Dynamically determine y_min and y_max from the points
+        let (y_min, y_max) = points.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), &(_, y)| {
+            (min.min(y), max.max(y))
+        });
+
+        // If all y are non-finite, skip plotting
+        if y_min == f64::INFINITY || y_max == f64::NEG_INFINITY {
+            return Err("All y values are non-finite, cannot plot graph.".into());
+        }
+
         let out = BitMapBackend::new("output.png", (640, 480)).into_drawing_area();
         out.fill(&WHITE)?;
-
-        let x_min = newton_interval.0;
-        let x_max = newton_interval.1;
-        let y_min = -1000.0;
-        let y_max = 1000.0;
 
         let mut chart = ChartBuilder::on(&out)
             .caption("Polynomial Graph", ("sans-serif", 30))
@@ -175,15 +251,6 @@ fn main(){
 
         chart.configure_mesh().draw()?;
 
-        // Generate (x, y) points
-        let points: Vec<(f64, f64)> = (0..=1000)
-            .map(|i| {
-                let x = x_min + (x_max - x_min) * (i as f64) / 1000.0;
-                let y = get_value_of_function(&function_variables, x);
-                (x, y)
-            })
-            .collect();
-
         chart.draw_series(LineSeries::new(points, &RED))?;
         Ok(())
     })();
@@ -191,44 +258,47 @@ fn main(){
         println!("Plotting error: {}", e);
     }
 
-    // ...existing code...
+    // Prepare print_variables with 5 slots, all set to vec![NAN] by default
+    let mut print_variables: Vec<Vec<f64>> = vec![vec![NAN]; 6];
+    print_variables[0] = user_variables.clone();
+    print_variables[1] = function_variables.clone();
 
-    let mut print_variables:Vec<Vec<f64>> = vec![];
-    print_variables.push(function_variables.clone());
-
+    // Roots
     if calculate_root {
-        match get_root_of_function(&function_variables, newton_interval) {
+        match get_root_of_function(&function_variables, &newton_interval) {
             Ok(root) => {
-                print_variables.push(root.clone());
+                print_variables[2] = root.clone();
             },
             Err(e) => {
                 println!("{}", e);
-                print_variables.push(vec![NAN]);
+                // Already NAN
             }
         }
     }
 
+    // Extrema and saddle points
     if calculate_extrema {
-        match extrema::calculate_extrema(&function_variables) {
+        match extrema::calculate_extrema(&function_variables, &newton_interval) {
             Ok(extrema) => {
-                print_variables.push(extrema.0.clone());
-                print_variables.push(extrema.1.clone());
+                print_variables[3] = extrema.0.clone();
+                print_variables[4] = extrema.1.clone();
             },
             Err(e) => {
                 println!("{}", e);
-                print_variables.push(vec![NAN]);
+                // Already NAN
             }
         }
     }
 
+    // Inflection points
     if calculate_inflection_points {
-        match inflection_points::get_inflection_points(&function_variables) {
+        match inflection_points::get_inflection_points(&function_variables, &newton_interval) {
             Ok(inflection_points) => {
-                print_variables.push(inflection_points.clone());
+                print_variables[5] = inflection_points.clone();
             },
             Err(e) => {
                 println!("{}", e);
-                print_variables.push(vec![NAN]);
+                // Already NAN
             }
         }
     }
