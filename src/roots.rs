@@ -39,8 +39,7 @@ fn is_singularity(variables: &Vec<f64>, x: f64) -> bool {
     d.is_nan() || d.is_infinite() || d.abs() > 1e10
 }
 
-// The Main function which controls the other functions
-fn newton_method(function_variables: &Vec<f64>, interval: &(f64, f64)) -> Result<Vec<f64>, String> {
+fn newton_method(function_variables: &Vec<f64>, interval: &(f64, f64)) -> Result<f64, String> {
     let derivative_variables = get_derivative_of_function(&function_variables);
     let mut x = get_random_number(&interval);
 
@@ -54,27 +53,28 @@ fn newton_method(function_variables: &Vec<f64>, interval: &(f64, f64)) -> Result
         return Err("No valid x found in interval".to_string());
     }
 
+
     // Find the root
-    if get_value_of_function(&function_variables, &0.0) == 0.0 {
-        // Shortcut: root is at x = 0
-        x = 0.0;
-    } else {
-        // Use Newton's method
-        for _i in 0..100 {
-            let tangent_variables = get_tangent(&function_variables, &derivative_variables, &mut x, interval.1);
-            match get_root(&tangent_variables) {
-                Ok(root) => x = root,
-                Err(e) => { return Err(e); }
-            }
+    for _i in 0..100 {
+        let tangent_variables = get_tangent(&function_variables, &derivative_variables, &mut x, interval.1);
+        match get_root(&tangent_variables) {
+            Ok(root) => {
+                if (root - x).abs() < 1e-10 {
+                    x = root;
+                    break;
+                }
+                x = root;
+            },
+            Err(e) => return Err(e),
         }
     }
+
 
     if get_value_of_function(&function_variables, &x).abs() > 1e-6 {
         return Err("Failed to find root within tolerance".to_string());
     }
-    else {
-        return Ok(vec![]);
-    }
+
+    Ok(x) // ← now returns the actual root value
 }
 
 pub fn get_root_with_newton_method(
@@ -92,13 +92,17 @@ pub fn get_root_with_newton_method(
     let (x_start, x_end) = interval;
     let step = (x_end - x_start) / (n_points as f64 - 1.0);
 
+    if get_value_of_function(function_variables, &0.0).abs() < 1e-10 {
+        roots.push(0.0);
+    }
+
     for i in 0..n_points {
         let x0 = x_start + i as f64 * step;
         let shifted_interval = (x0, interval.1);
 
         if let Ok(root) = newton_method(function_variables, &shifted_interval) {
-            if !roots.iter().any(|r: &f64| (r - root[0]).abs() < tol) {
-                roots.push(root[0]);
+            if !roots.iter().any(|r| (r - root).abs() < tol) {
+                roots.push(root); // ← directly push the f64
             }
         }
     }
@@ -126,30 +130,23 @@ pub fn get_all_roots_with_bracketing(
     let (x_start, x_end) = interval;
     let step = (x_end - x_start) / (n_points as f64 - 1.0);
 
-    // Evaluate f at all sample points
     let xs: Vec<f64> = (0..n_points).map(|i| x_start + i as f64 * step).collect();
     let ys: Vec<f64> = xs
         .iter()
-        .map(|&x| {
-            // Evaluate polynomial at x using function_variables as coefficients
-            function_variables
-                .iter()
-                .enumerate()
-                .map(|(i, &c)| c * x.powi(i as i32))
-                .sum()
-        })
+        .map(|&x| get_value_of_function(function_variables, &x))
         .collect();
 
-    // Find brackets where sign changes
+    if get_value_of_function(function_variables, &0.0).abs() < 1e-10 {
+        roots.push(0.0);
+    }
+
     for i in 0..n_points - 1 {
         if ys[i] * ys[i + 1] < 0.0 {
             let bracket = (xs[i], xs[i + 1]);
 
             if let Ok(root) = newton_method(function_variables, &bracket) {
-                if let Some(&first_root) = root.get(0) {
-                    if !roots.iter().any(|r: &f64| (r - first_root).abs() < tol) {
-                        roots.push(first_root);
-                    }
+                if !roots.iter().any(|r| (r - root).abs() < tol) {
+                    roots.push(root); // ← directly push the f64
                 }
             }
         }
@@ -550,6 +547,6 @@ pub fn get_root_of_function(function_variables: &Vec<f64>, newton_interval: &(f6
 
     // if there is no easier way to calculate the root of the function use the newton method
     else {
-        get_all_roots_with_bracketing(&function_variables, &newton_interval, 500, 1e-8)
+        get_all_roots_with_bracketing(&function_variables, &newton_interval, 5000, 1e-8)
     }
 }

@@ -28,7 +28,18 @@ fn main(){
     // user inputs: --------------------------------------------------------------------------------
 
     // Here the user may set the desired function
-    let user_variables = vec![1.0, 4.0, -4.0, 1.0, 3.0, 1.0, 10.0, 1.0, -5.0, 0.0];
+    let user_variables = vec![
+        1.0, 10.0,
+        -5.0,  9.0,
+        -30.0,  8.0,
+        150.0,  7.0,
+        273.0,  6.0,
+        -1365.0,  5.0,
+        -820.0,  4.0,
+        4100.0,  3.0,
+        576.0,  2.0,
+        -2880.0,  1.0,
+    ];
 
     // Here the user may set the desired interval
     let newton_interval: (f64, f64) = (-100.0, 100.0);
