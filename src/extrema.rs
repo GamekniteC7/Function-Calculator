@@ -1,7 +1,8 @@
-use crate::{get_value_of_function, get_derivative_of_function, roots::get_root_of_function};
+use crate::utils::{get_value_of_function, get_derivative_of_function};
+use crate::roots::get_root_of_function;
 
 pub fn calculate_extrema(function_variables: &Vec<f64>, newton_interval: &(f64, f64)) -> Result<(Vec<f64>, Vec<f64>), String> {
-    let derivative = Vec::from(get_derivative_of_function(&function_variables));
+    let derivative = get_derivative_of_function(&function_variables);
     let second_derivative = get_derivative_of_function(&derivative);
     let mut derivative_roots = Vec::new();
     let mut extrema: Vec<f64> = Vec::new();

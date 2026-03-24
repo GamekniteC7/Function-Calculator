@@ -2,7 +2,7 @@
 // This part of the code uses the newton method to calculate the root of any given function
 // The Code will only work in an interval which you will set manually in main in
 
-use crate::{get_derivative_of_function, get_random_number, get_value_of_function};
+use crate::utils::{get_derivative_of_function, get_random_number, get_value_of_function};
 
 // calculates the tangent line for the point P( x | f(x) )
 fn get_tangent(function_variables: &Vec<f64>, derivative_variables: &Vec<f64>, x: &mut f64, upper_interval: f64) -> Vec<f64> {
