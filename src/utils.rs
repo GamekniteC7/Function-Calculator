@@ -130,7 +130,7 @@ pub(crate) fn plot_function(function_variables: &Vec<f64>) -> Result<(), String>
 
 
 
-pub(crate) fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: bool, calculate_inflection_points: bool, calculate_point: bool) {
+pub(crate) fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_extrema: bool, calculate_inflection_points: bool, calculate_point: bool, calculate_intersection_points: bool) {
     /*
     user_variables: &Vec<f64>,
     function_variables: &Vec<f64>,
@@ -138,10 +138,12 @@ pub(crate) fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_e
     extrema: Vec<f64>,
     saddle_points: Vec<f64>,
     inflection_points: Vec<f64>,
+    intersection_points: Vec<f64>,
     calculate_root: bool,
     calculate_extrema: bool,
     calculate_inflection_points: bool,
-    calculate_point: bool
+    calculate_point: bool,
+    calculate_intersection_points: bool
     */
 
     let user_variables = variables[0].clone();
@@ -223,6 +225,11 @@ pub(crate) fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_e
         println!();
         println!("The y-value of the function at the x-value point is:");
         println!("{:#?}", variables[6]);
+    }
+    if calculate_intersection_points {
+        println!();
+        println!("The intersection points of the functions are:");
+        println!("{:#?}", variables[7]);
     }
     println!();
     println!("------------------------------------------------------------");
