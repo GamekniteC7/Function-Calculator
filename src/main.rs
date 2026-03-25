@@ -37,20 +37,19 @@ fn main(){
     ];
 
     let user_function_b = vec![
-        3.0, 0.0
+        2.0, 0.0
     ];
 
     // Here the user may set the desired interval
     let newton_interval: (f64, f64) = (-100.0, 100.0);
 
-    // Here the user may decide if the program should give the y-value of a function at a given y-value
-    let calculate_point = true;
-    let point = 10.0;
-
     // Here the user may choose what to calculate
     let calculate_root = true;
     let calculate_extrema = true;
     let calculate_inflection_points = true;
+    let calculate_y_value = true;
+    // If you chose to calculate the y-value at a given x-value you need to specify the x-value
+    let x_value = 10.0;
     let calculate_intersection_points = true;
 
     // ---------------------------------------------------------------------------------------------
@@ -121,8 +120,8 @@ fn main(){
     }
 
     // Value at a point
-    if calculate_point {
-        print_variables[6] = vec![get_value_of_function(&function_variables_a, &point)];
+    if calculate_y_value {
+        print_variables[6] = vec![get_value_of_function(&function_variables_a, &x_value)];
     }
 
     // Calculate intersection
@@ -138,5 +137,6 @@ fn main(){
         }
     }
 
-    print(&print_variables, calculate_root, calculate_extrema, calculate_inflection_points, calculate_point, calculate_intersection_points);
+    print(&print_variables, calculate_root, calculate_extrema, calculate_inflection_points, calculate_y_value, calculate_intersection_points);
 }
+    // ...existing code...

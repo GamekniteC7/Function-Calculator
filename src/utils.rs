@@ -81,9 +81,7 @@ pub(crate) fn simplify_function(function_variables: &Vec<f64>) -> Vec<f64> {
 
 
 pub(crate) fn plot_function(function_variables: &Vec<f64>) -> Result<(), String> {
-    // Plot the function using plotters (fixed for overflow)
     let plot_result = (|| -> Result<(), Box<dyn std::error::Error>> {
-        // Use a smaller, reasonable x-range for plotting
         let x_min = -100.0;
         let x_max = 100.0;
 
@@ -97,15 +95,13 @@ pub(crate) fn plot_function(function_variables: &Vec<f64>) -> Result<(), String>
             .filter(|(_, y)| y.is_finite())
             .collect();
 
-        // Dynamically determine y_min and y_max from the points
-        let (y_min, y_max) = points.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(min, max), &(_, y)| {
-            (min.min(y), max.max(y))
-        });
-
-        // If all y are non-finite, skip plotting
-        if y_min == f64::INFINITY || y_max == f64::NEG_INFINITY {
+        if points.is_empty() {
             return Err("All y values are non-finite, cannot plot graph.".into());
         }
+
+        // y-axis matches x-axis range exactly
+        let y_min = x_min;
+        let y_max = x_max;
 
         let out = BitMapBackend::new("output.png", (640, 480)).into_drawing_area();
         out.fill(&WHITE)?;
