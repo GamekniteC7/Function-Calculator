@@ -139,4 +139,3 @@ fn main(){
 
     print(&print_variables, calculate_root, calculate_extrema, calculate_inflection_points, calculate_y_value, calculate_intersection_points);
 }
-    // ...existing code...
