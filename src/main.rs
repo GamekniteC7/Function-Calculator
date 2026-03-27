@@ -30,10 +30,10 @@ fn main(){
 
     // Here the user may set the desired function
     let user_function_a = vec![
-        2.0, 3.0,
-        -5.0, 2.0,
-        1.0, 1.0,
-        6.0, 0.0
+        -1.0, 5.0,
+        15.0, 4.0,
+        -75.0, 3.0,
+        125.0, 2.0
     ];
 
     let user_function_b = vec![
@@ -49,8 +49,9 @@ fn main(){
     let calculate_inflection_points = true;
     let calculate_y_value = true;
     // If you chose to calculate the y-value at a given x-value you need to specify the x-value
-    let x_value = 10.0;
-    let calculate_intersection_points = true;
+    let x_value = -1.0;
+    let calculate_intersection_points = false;
+    let do_plot_function = false;
 
     // ---------------------------------------------------------------------------------------------
 
@@ -69,10 +70,13 @@ fn main(){
     let function_variables_a = simplify_function(&user_function_a);
     let function_variables_b = simplify_function(&user_function_b);
 
-    match plot_function(&function_variables_a) {
-        Ok(_) => {}
-        Err(e) => {println!("{}", e);}
+    if do_plot_function {
+        match plot_function(&function_variables_a) {
+            Ok(_) => {}
+            Err(e) => { println!("{}", e); }
+        }
     }
+
 
     // Prepare print_variables with 5 slots, all set to vec![NAN] by default
     let mut print_variables: Vec<Vec<f64>> = vec![vec![NAN]; 8];
