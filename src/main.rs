@@ -3,143 +3,111 @@ mod extrema;
 mod inflection_points;
 mod utils;
 mod intersection_points;
+mod function_calculator;
 
-use std::f64::NAN;
-use crate::intersection_points::get_intersection_points;
-use crate::roots::get_root_of_function;
-use crate::utils::{get_value_of_function, print, simplify_function, plot_function};
-
+use fltk::{app, button, input, prelude::*, window};
+use fltk::button::CheckButton;
+use fltk::enums::Align;
+use fltk::input::FloatInput;
+use fltk::input::Input;
+use crate::function_calculator::function_calculator;
+use crate::utils::*;
 
 // =================================================================================================
 // This is the main function, the starting point of the entire program
 
-fn main(){
-    println!();
-    println!("------------------------------------------------------------");
-    println!();
-    println!(
-        "Welcome to the function calculator! This program is able to calculate the roots, extrema, saddle points and inflection points of any given polynomial.
-        The function must be supplied as f(x) = a_1*x^n_1 + a_2*x^n_2... as an array of variables with function_variables = [a_1, n_1, a_2, n_2...].
-        The length of the array is variable."
-    );
-    println!();
-    println!("------------------------------------------------------------");
-    println!();
-
-    // user inputs: --------------------------------------------------------------------------------
-
-    // Here the user may set the desired function
-    let user_function_a = vec![
-        -1.0, 5.0,
-        15.0, 4.0,
-        -75.0, 3.0,
-        125.0, 2.0
-    ];
-
-    let user_function_b = vec![
-        2.0, 0.0
-    ];
+fn main() {
 
     // Here the user may set the desired interval
     let newton_interval: (f64, f64) = (-100.0, 100.0);
 
-    // Here the user may choose what to calculate
-    let calculate_root = true;
-    let calculate_extrema = true;
-    let calculate_inflection_points = true;
-    let calculate_y_value = true;
-    // If you chose to calculate the y-value at a given x-value you need to specify the x-value
-    let x_value = -1.0;
-    let calculate_intersection_points = false;
-    let do_plot_function = false;
-
     // ---------------------------------------------------------------------------------------------
 
-    // Check if function a is valid
-    if user_function_a.len() == 0 || user_function_a.len() % 2 != 0 {
-        println!("Invalid function a");
-        return;
-    }
+    // create app
+    let calculator_window = app::App::default();
+    // create app window
+    let mut win = window::Window::default().with_size(800, 600).with_label("Function Calculator");
 
-    // Check if function b is valid
-    if user_function_b.len() == 0 || user_function_b.len() % 2 != 0 {
-        println!("Invalid function b");
-        return;
-    }
+    // create the user Input fields
 
-    let function_variables_a = simplify_function(&user_function_a);
-    let function_variables_b = simplify_function(&user_function_b);
+        // positioning for function Inputs
+    let parent_w = win.width();
+    let function_input_w = 600;
 
-    if do_plot_function {
-        match plot_function(&function_variables_a) {
-            Ok(_) => {}
-            Err(e) => { println!("{}", e); }
-        }
-    }
+        // create function inputs
+    let mut function_a_input = Input::default().with_size(function_input_w, 30).with_pos((parent_w - function_input_w) / 2, 20).with_label("Function A (a_1, n_1, a_2, n_2...):");
+    function_a_input.set_align(Align::Top | Align::Center); // Align label at the center above the input field
+    function_a_input.set_value("f(x) = x^2"); // default function
+    let mut function_b_input = Input::default().with_size(function_input_w, 30).below_of(&function_a_input, 20).with_label("Function B (a_1, n_1, a_2, n_2...):");
+    function_b_input.set_align(Align::Top | Align::Center); // Align label at the center above the input field
+    function_b_input.set_value("f(x) = 2x"); // default function
+
+        // positioning for bool inputs
+    let bool_inputs_y = function_b_input.y() + function_b_input.height() + 20;
+    let bool_inputs_w = 280;
+    let ck_btn_x = (parent_w - bool_inputs_w) / 2;
+    
+        // create bool inputs
+    let mut root_ck_btn = CheckButton::default().with_pos(ck_btn_x, bool_inputs_y).with_size(bool_inputs_w, 30).with_label("Calculate Roots");
+    root_ck_btn.set_value(true); // default to calculating roots
+    let mut extrema_ck_btn = CheckButton::default().with_size(bool_inputs_w, 30).below_of(&root_ck_btn, 10).with_label("Calculate Extrema");
+    extrema_ck_btn.set_value(true); // default to calculating extrema
+    let mut inflection_points_ck_btn = CheckButton::default().with_size(bool_inputs_w, 30).below_of(&extrema_ck_btn, 10).with_label("Calculate Inflection Points");
+    inflection_points_ck_btn.set_value(true); // default to calculating inflection points
+    
+        // Y-value check button
+    let mut y_value_ck_btn = CheckButton::default().with_size(bool_inputs_w, 30).below_of(&inflection_points_ck_btn, 10).with_label("Calculate y-value at x:");
+    y_value_ck_btn.set_value(true); // default to calculating y_value
+        // X-value selector right below the Y-value check button
+    let mut x_value_selector = FloatInput::default().with_size(80, 30).below_of(&y_value_ck_btn, 5);
+    x_value_selector.set_pos(ck_btn_x + 30, x_value_selector.y()); // slightly indented
+    x_value_selector.set_value("0"); // default to calculating y_value at x = 0
+
+    let mut intersection_points_ck_btn = CheckButton::default().with_size(bool_inputs_w, 30).below_of(&x_value_selector, 10);
+    intersection_points_ck_btn.set_pos(ck_btn_x, intersection_points_ck_btn.y());
+    intersection_points_ck_btn.set_label("Calculate Intersection Points");
+    intersection_points_ck_btn.set_value(true); // default to calculating intersection points
+
+    let mut plot_function_ck_btn = CheckButton::default().with_size(bool_inputs_w, 30).below_of(&intersection_points_ck_btn, 10).with_label("Plot Function");
+    plot_function_ck_btn.set_value(false); // default to not plot the function
+
+    // create run button for the program
+        // positioning for calculate button
+    let calculate_btn_w = 80;
+    let mut calculate_btn = button::Button::default().with_size(80, 30).with_pos((parent_w - calculate_btn_w) / 2 - 10, plot_function_ck_btn.y() + plot_function_ck_btn.h() + 20).with_label("calculate");
 
 
-    // Prepare print_variables with 5 slots, all set to vec![NAN] by default
-    let mut print_variables: Vec<Vec<f64>> = vec![vec![NAN]; 8];
-    print_variables[0] = user_function_a.clone();
-    print_variables[1] = function_variables_a.clone();
+    win.end();
+    win.show();
 
-    // Roots
-    if calculate_root {
-        match get_root_of_function(&function_variables_a, &newton_interval) {
-            Ok(root) => {
-                print_variables[2] = root.clone();
-            },
-            Err(e) => {
-                println!("{}", e);
-                // Already NAN
-            }
-        }
-    }
+    calculate_btn.set_callback(move |_| {
 
-    // Extrema and saddle points
-    if calculate_extrema {
-        match extrema::calculate_extrema(&function_variables_a, &newton_interval) {
-            Ok(extrema) => {
-                print_variables[3] = extrema.0.clone();
-                print_variables[4] = extrema.1.clone();
-            },
-            Err(e) => {
-                println!("{}", e);
-                // Already NAN
-            }
-        }
-    }
+        // get user Inputs from the UI
+        let user_function_a = parse_polynomial(&function_a_input.value());
+        let user_function_b = parse_polynomial(&function_b_input.value());
+        let calculate_root = root_ck_btn.value();
+        let calculate_extrema = extrema_ck_btn.value();
+        let calculate_inflection_points = inflection_points_ck_btn.value();
+        let calculate_y_value = y_value_ck_btn.value();
+        let x_value = x_value_selector.value().parse().unwrap_or(0.0);
+        let calculate_intersection_points = intersection_points_ck_btn.value();
+        let do_plot_function = plot_function_ck_btn.value();
 
-    // Inflection points
-    if calculate_inflection_points {
-        match inflection_points::get_inflection_points(&function_variables_a, &newton_interval) {
-            Ok(inflection_points) => {
-                print_variables[5] = inflection_points.clone();
-            },
-            Err(e) => {
-                println!("{}", e);
-                // Already NAN
-            }
-        }
-    }
+        println!("Function A variables: {:?}", user_function_a);
 
-    // Value at a point
-    if calculate_y_value {
-        print_variables[6] = vec![get_value_of_function(&function_variables_a, &x_value)];
-    }
+        function_calculator(
+            user_function_a.clone(),
+            user_function_b.clone(),
+            newton_interval.clone(),
+            calculate_root.clone(),
+            calculate_extrema.clone(),
+            calculate_inflection_points.clone(),
+            calculate_y_value.clone(),
+            x_value.clone(),
+            calculate_intersection_points.clone(),
+            do_plot_function.clone()
+        );
+    });
 
-    // Calculate intersection
-    if calculate_intersection_points {
-        match get_intersection_points(&function_variables_a, &function_variables_b, &newton_interval) {
-            Ok(intersection_points) => {
-                print_variables[7] = intersection_points.clone();
-            },
-            Err(e) => {
-                println!("{}", e);
-                // Already NAN
-            }
-        }
-    }
-
-    print(&print_variables, calculate_root, calculate_extrema, calculate_inflection_points, calculate_y_value, calculate_intersection_points);
+    calculator_window.run().unwrap();
 }

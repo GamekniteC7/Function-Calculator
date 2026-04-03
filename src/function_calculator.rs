@@ -1,0 +1,123 @@
+use std::f64::NAN;
+use crate::{extrema, inflection_points};
+use crate::intersection_points::get_intersection_points;
+use crate::roots::get_root_of_function;
+use crate::utils::{get_value_of_function, print, simplify_function, plot_function};
+
+
+// =================================================================================================
+
+pub fn function_calculator(
+    user_function_a: Vec<f64>,
+    user_function_b: Vec<f64>,
+    newton_interval: (f64, f64),
+    calculate_root: bool,
+    calculate_extrema: bool,
+    calculate_inflection_points: bool,
+    calculate_y_value: bool,
+    x_value: f64,
+    calculate_intersection_points: bool,
+    do_plot_function: bool,
+) {
+    println!();
+    println!("------------------------------------------------------------");
+    println!();
+    println!(
+        "Welcome to the function calculator! This program is able to calculate the roots, extrema, saddle points and inflection points of any given polynomial.
+        The function must be supplied as f(x) = a_1*x^n_1 + a_2*x^n_2... as an array of variables with function_variables = [a_1, n_1, a_2, n_2...].
+        The length of the array is variable."
+    );
+    println!();
+    println!("------------------------------------------------------------");
+    println!();
+
+    // ---------------------------------------------------------------------------------------------
+
+    // Check if function a is valid
+    if user_function_a.len() == 0 || user_function_a.len() % 2 != 0 {
+        println!("Invalid function a");
+        return;
+    }
+
+    // Check if function b is valid
+    if user_function_b.len() == 0 || user_function_b.len() % 2 != 0 {
+        println!("Invalid function b");
+        return;
+    }
+
+    let function_variables_a = simplify_function(&user_function_a);
+    let function_variables_b = simplify_function(&user_function_b);
+
+    if do_plot_function {
+        match plot_function(&function_variables_a) {
+            Ok(_) => {}
+            Err(e) => { println!("{}", e); }
+        }
+    }
+
+
+    // Prepare print_variables with 5 slots, all set to vec![NAN] by default
+    let mut print_variables: Vec<Vec<f64>> = vec![vec![NAN]; 8];
+    print_variables[0] = user_function_a.clone();
+    print_variables[1] = function_variables_a.clone();
+
+    // Roots
+    if calculate_root {
+        match get_root_of_function(&function_variables_a, &newton_interval) {
+            Ok(root) => {
+                print_variables[2] = root.clone();
+            },
+            Err(e) => {
+                println!("{}", e);
+                // Already NAN
+            }
+        }
+    }
+
+    // Extrema and saddle points
+    if calculate_extrema {
+        match extrema::calculate_extrema(&function_variables_a, &newton_interval) {
+            Ok(extrema) => {
+                print_variables[3] = extrema.0.clone();
+                print_variables[4] = extrema.1.clone();
+            },
+            Err(e) => {
+                println!("{}", e);
+                // Already NAN
+            }
+        }
+    }
+
+    // Inflection points
+    if calculate_inflection_points {
+        match inflection_points::get_inflection_points(&function_variables_a, &newton_interval) {
+            Ok(inflection_points) => {
+                print_variables[5] = inflection_points.clone();
+            },
+            Err(e) => {
+                println!("{}", e);
+                // Already NAN
+            }
+        }
+    }
+
+    // Value at a point
+    if calculate_y_value {
+        print_variables[6] = vec![get_value_of_function(&function_variables_a, &x_value)];
+    }
+
+    // Calculate intersection
+    if calculate_intersection_points {
+        match get_intersection_points(&function_variables_a, &function_variables_b, &newton_interval) {
+            Ok(intersection_points) => {
+                print_variables[7] = intersection_points.clone();
+            },
+            Err(e) => {
+                println!("{}", e);
+                // Already NAN
+            }
+        }
+    }
+
+    print(&print_variables, calculate_root, calculate_extrema, calculate_inflection_points, calculate_y_value, calculate_intersection_points);
+}

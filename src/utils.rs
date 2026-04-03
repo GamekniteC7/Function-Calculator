@@ -230,3 +230,66 @@ pub(crate) fn print(variables: &Vec<Vec<f64>>, calculate_root: bool, calculate_e
     println!();
     println!("------------------------------------------------------------");
 }
+
+pub(crate) fn parse_polynomial(input: &str) -> Vec<f64> {
+    let input = input
+        .split('=')
+        .last()
+        .unwrap_or(input)
+        .trim();
+
+    let normalized = input
+        .replace("- ", "-")
+        .replace("+ ", "+")
+        .replace(" +", "+")
+        .replace(" -", "-");
+
+    let normalized = {
+        let mut s = String::new();
+        let chars: Vec<char> = normalized.chars().collect();
+        for (i, &c) in chars.iter().enumerate() {
+            if c == '-' && i != 0 {
+                s.push('+');
+            }
+            s.push(c);
+        }
+        s
+    };
+
+    normalized
+        .split('+')
+        .filter_map(|term| {
+            let term = term.trim();
+            if term.is_empty() {
+                return None;
+            }
+
+            if term.contains('x') {
+                let parts: Vec<&str> = term.splitn(2, 'x').collect();
+
+                let a: f64 = match parts[0].trim() {
+                    "" | "+" => 1.0,
+                    "-"      => -1.0,
+                    s        => s.parse().ok()?,
+                };
+
+                let n: f64 = if let Some(exp_part) = parts.get(1) {
+                    let exp_str = exp_part.trim_start_matches('^').trim();
+                    if exp_str.is_empty() {
+                        1.0
+                    } else {
+                        exp_str.parse().ok()?
+                    }
+                } else {
+                    1.0
+                };
+
+                Some(vec![a, n])
+            } else {
+                let a: f64 = term.trim().parse().ok()?;
+                Some(vec![a, 0.0])
+            }
+        })
+        .flatten()
+        .collect()
+}

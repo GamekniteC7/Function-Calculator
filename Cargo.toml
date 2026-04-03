@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 rand = "0.10.0"
 plotters = "0.3"
+fltk = { version = "1.5", features = ["fltk-bundled"] }
