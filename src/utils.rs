@@ -293,3 +293,13 @@ pub(crate) fn parse_polynomial(input: &str) -> Vec<f64> {
         .flatten()
         .collect()
 }
+
+pub(crate) fn parse_interval(input: &str) -> Option<(f64, f64)> {
+    let parts: Vec<&str> = input.split(',').collect();
+    if parts.len() != 2 {
+        return None;
+    }
+    let a = parts[0].trim().parse::<f64>().ok()?;
+    let b = parts[1].trim().parse::<f64>().ok()?;
+    Some((a, b))
+}
