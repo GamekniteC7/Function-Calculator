@@ -1,5 +1,5 @@
+use crate::calculator::roots::get_root_of_function;
 use crate::utils::simplify_function;
-use crate::roots::get_root_of_function;
 
 pub fn get_intersection_points(
     function_a: &Vec<f64>,

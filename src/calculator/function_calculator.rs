@@ -1,9 +1,8 @@
+use crate::calculator::intersection_points::get_intersection_points;
+use crate::calculator::roots::get_root_of_function;
+use crate::calculator::{extrema, inflection_points};
+use crate::utils::{get_value_of_function, plot_function, print, simplify_function};
 use std::f64::NAN;
-use crate::{extrema, inflection_points};
-use crate::intersection_points::get_intersection_points;
-use crate::roots::get_root_of_function;
-use crate::utils::{get_value_of_function, print, simplify_function, plot_function};
-
 
 // =================================================================================================
 
@@ -51,10 +50,11 @@ pub fn function_calculator(
     if do_plot_function {
         match plot_function(&function_variables_a) {
             Ok(_) => {}
-            Err(e) => { println!("{}", e); }
+            Err(e) => {
+                println!("{}", e);
+            }
         }
     }
-
 
     // Prepare print_variables with 5 slots, all set to vec![NAN] by default
     let mut print_variables: Vec<Vec<f64>> = vec![vec![NAN]; 8];
@@ -66,7 +66,7 @@ pub fn function_calculator(
         match get_root_of_function(&function_variables_a, &newton_interval) {
             Ok(root) => {
                 print_variables[2] = root.clone();
-            },
+            }
             Err(e) => {
                 println!("{}", e);
                 // Already NAN
@@ -80,7 +80,7 @@ pub fn function_calculator(
             Ok(extrema) => {
                 print_variables[3] = extrema.0.clone();
                 print_variables[4] = extrema.1.clone();
-            },
+            }
             Err(e) => {
                 println!("{}", e);
                 // Already NAN
@@ -93,7 +93,7 @@ pub fn function_calculator(
         match inflection_points::get_inflection_points(&function_variables_a, &newton_interval) {
             Ok(inflection_points) => {
                 print_variables[5] = inflection_points.clone();
-            },
+            }
             Err(e) => {
                 println!("{}", e);
                 // Already NAN
@@ -108,10 +108,14 @@ pub fn function_calculator(
 
     // Calculate intersection
     if calculate_intersection_points {
-        match get_intersection_points(&function_variables_a, &function_variables_b, &newton_interval) {
+        match get_intersection_points(
+            &function_variables_a,
+            &function_variables_b,
+            &newton_interval,
+        ) {
             Ok(intersection_points) => {
                 print_variables[7] = intersection_points.clone();
-            },
+            }
             Err(e) => {
                 println!("{}", e);
                 // Already NAN
@@ -119,5 +123,12 @@ pub fn function_calculator(
         }
     }
 
-    print(&print_variables, calculate_root, calculate_extrema, calculate_inflection_points, calculate_y_value, calculate_intersection_points);
+    print(
+        &print_variables,
+        calculate_root,
+        calculate_extrema,
+        calculate_inflection_points,
+        calculate_y_value,
+        calculate_intersection_points,
+    );
 }
